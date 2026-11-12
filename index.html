@@ -1,0 +1,745 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agenda Volley</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Lilita+One&display=swap">
+<style>html { color-scheme: light; -webkit-text-size-adjust: 100%; }
+body { margin: 0; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+
+/* Layout: sticky header with three tabs, one column of cards on phone, two columns from 860px.
+   Palette: black ink, fuchsia accent, cool paper background. */
+:root {
+  --bg: #eef1f5;
+  --surface: #ffffff;
+  --surface-2: #e6ebf1;
+  --ink: #0a0a0a;
+  --muted: #55657a;
+  --line: #d3dae3;
+  --accent: #0a0a0a;
+  --accent-ink: #ffffff;
+  --accent-soft: #e3e3e8;
+  --pink: #f20fa8;
+  --on-pink: #ffffff;
+  --ok: #1d7a46;
+  --ok-soft: #d9f0e3;
+  --bad: #b3261e;
+  --bad-soft: #fbe0dd;
+  --warn-soft: #fff0c9;
+  --warn-ink: #6b4a00;
+  --font-display: "Lilita One", "Arial Rounded MT Bold", system-ui, sans-serif;
+  --font-body: "Outfit", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c141d; --surface: #152130; --surface-2: #1d2b3d; --ink: #e8eef5; --muted: #98a8bb;
+    --line: #29384b; --accent: #ffffff; --accent-ink: #0a0a0a; --accent-soft: #2b2b36; --pink: #ff3fcf; --on-pink: #1a0010;
+    --ok: #55c98a; --ok-soft: #153a28; --bad: #ff8a80; --bad-soft: #43201d;
+    --warn-soft: #3c3112; --warn-ink: #ffd877; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c141d; --surface: #152130; --surface-2: #1d2b3d; --ink: #e8eef5; --muted: #98a8bb;
+  --line: #29384b; --accent: #ffffff; --accent-ink: #0a0a0a; --accent-soft: #2b2b36; --pink: #ff3fcf; --on-pink: #1a0010;
+  --ok: #55c98a; --ok-soft: #153a28; --bad: #ff8a80; --bad-soft: #43201d;
+  --warn-soft: #3c3112; --warn-ink: #ffd877; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 calc(48px + env(safe-area-inset-bottom, 0px));
+}
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; text-transform: uppercase; margin: 0; letter-spacing: .01em; text-wrap: balance; }
+p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 920px; margin: 0 auto; }
+
+header.top { position: sticky; top: 0; z-index: 20; background: var(--bg); padding-top: calc(14px + env(safe-area-inset-top, 0px)); }
+.brand { display: flex; align-items: baseline; gap: 10px; }
+.brand h1 { font-size: 30px; letter-spacing: .02em; }
+.brand span { color: var(--muted); font-size: 14px; }
+nav.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-top: 10px; border-bottom: 2px solid var(--line); }
+nav.tabs a {
+  text-align: center; padding: 10px 4px 9px; font-family: var(--font-display); font-weight: 900; font-size: clamp(14px, 4.2vw, 19px);
+  text-transform: uppercase; letter-spacing: .02em; text-decoration: none; color: var(--muted);
+  border-bottom: 4px solid transparent; margin-bottom: -2px;
+}
+nav.tabs a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); }
+
+main { padding-top: 20px; display: grid; gap: 18px; }
+.section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.section-head h2 { font-size: 26px; text-transform: uppercase; letter-spacing: .04em; }
+.sub { color: var(--muted); font-size: 14px; }
+
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 14px; font-weight: 600; min-height: 40px; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.small { min-height: 34px; padding: 5px 11px; font-size: 14px; }
+.btn.danger { color: var(--bad); }
+.btn.danger.armed { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.btn.ghost { background: transparent; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; }
+.grid { display: grid; gap: 14px; grid-template-columns: 1fr; }
+@media (min-width: 860px) { .grid.two { grid-template-columns: 1fr 1fr; } }
+
+.pill { display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; background: var(--surface-2); color: var(--muted); }
+.pill.home { background: var(--accent-soft); color: var(--accent); }
+.pill.example { background: var(--warn-soft); color: var(--warn-ink); }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+
+.banner { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; background: var(--warn-soft); color: var(--warn-ink); border-radius: var(--radius); padding: 10px 14px; font-size: 14px; }
+.notice { background: var(--surface-2); border-radius: var(--radius); padding: 10px 14px; font-size: 14px; color: var(--muted); }
+
+/* Partite */
+.match { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 14px; }
+.match.next { border: 2px solid var(--accent); }
+.datebox { background: var(--ink); color: var(--bg); border-radius: 8px; text-align: center; padding: 8px 0 6px; align-self: start; font-family: var(--font-display); text-transform: uppercase; }
+.datebox .dow { display: block; font-size: 14px; letter-spacing: .1em; opacity: .8; }
+.datebox .day { display: block; font-size: 38px; line-height: 1; font-weight: 700; }
+.datebox .mon { display: block; font-size: 15px; letter-spacing: .1em; }
+.match h3 { font-size: 22px; }
+.match .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.next-label { font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.times { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.times b { font-weight: 600; color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .06em; margin-right: 5px; }
+.times .big { font-family: var(--font-display); font-size: 24px; font-weight: 700; }
+.place { display: flex; gap: 8px; align-items: flex-start; margin-top: 10px; padding: 9px 11px; border-radius: 8px; background: var(--surface-2); text-decoration: none; color: var(--ink); }
+.place svg { flex: none; margin-top: 2px; color: var(--accent); }
+.place strong { display: block; }
+.place small { color: var(--muted); display: block; }
+.place .go { color: var(--accent); font-weight: 600; font-size: 14px; margin-top: 2px; }
+.place:hover { background: var(--accent-soft); }
+.idnote { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 8px 11px; border-radius: 8px; background: var(--warn-soft); color: var(--warn-ink); font-weight: 600; font-size: 14px; }
+.notes { margin-top: 8px; color: var(--muted); font-size: 15px; white-space: pre-wrap; }
+.actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+details.past summary { cursor: pointer; font-family: var(--font-display); font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 6px 0; }
+.match.past { opacity: .78; }
+
+/* Allenamenti */
+.weeknav { display: flex; align-items: center; gap: 8px; }
+.weeknav .label { font-family: var(--font-display); font-size: 22px; font-weight: 700; min-width: 0; flex: 1; text-align: center; font-variant-numeric: tabular-nums; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.stat { background: var(--surface-2); border-radius: 8px; padding: 10px 12px; }
+.stat .n { font-family: var(--font-display); font-size: 32px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat .n small { font-size: 18px; color: var(--muted); }
+.stat .l { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 12px; }
+.strip .d { text-align: center; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.strip .d .bar { height: 44px; margin-top: 4px; border-radius: 6px; background: var(--surface-2); position: relative; overflow: hidden; }
+.strip .d .bar i { position: absolute; left: 0; right: 0; bottom: 0; background: var(--ok); }
+.strip .d .bar.has { outline: 2px solid var(--accent); outline-offset: -2px; }
+.strip .d.today { color: var(--ink); font-weight: 600; }
+.done-list { margin-top: 12px; display: grid; gap: 8px; }
+.done-list .item { font-size: 15px; }
+.done-list .item b { font-weight: 600; }
+.training .head { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.training h3 { font-size: 24px; }
+.meta { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+.progress { height: 6px; border-radius: 99px; background: var(--surface-2); margin: 10px 0 4px; overflow: hidden; }
+.progress i { display: block; height: 100%; background: var(--ok); }
+.drills { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 4px; }
+.drill { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 4px 0; border-top: 1px solid var(--line); }
+.drill:first-child { border-top: 0; }
+.check { width: 30px; height: 30px; border-radius: 8px; border: 2px solid var(--line); background: var(--surface); display: grid; place-items: center; padding: 0; color: transparent; }
+.check[aria-pressed="true"] { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+.drill .name { min-width: 0; overflow-wrap: anywhere; }
+.drill.done .name { color: var(--muted); text-decoration: line-through; }
+.amount { font-family: var(--font-display); font-weight: 700; font-size: 20px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* Multe */
+.owe-total { font-family: var(--font-display); font-size: 48px; font-weight: 700; line-height: 1; color: var(--bad); font-variant-numeric: tabular-nums; }
+.owe-total.zero { color: var(--ok); }
+.rows { display: grid; gap: 0; margin-top: 10px; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.row:first-child { border-top: 0; }
+.row .who { min-width: 0; flex: 1 1 160px; }
+.row .who strong { display: block; overflow-wrap: anywhere; }
+.row .money { font-family: var(--font-display); font-weight: 700; font-size: 22px; font-variant-numeric: tabular-nums; }
+.row .money.paid { color: var(--ok); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface); padding: 6px 12px; font-size: 14px; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; background: var(--surface-2); border-radius: 99px; padding: 4px 6px 4px 12px; font-weight: 500; }
+.chip button { border: 0; background: transparent; width: 24px; height: 24px; border-radius: 50%; color: var(--muted); font-size: 18px; line-height: 1; padding: 0; }
+.chip button:hover { background: var(--line); }
+.inline-form { display: flex; gap: 8px; margin-top: 12px; }
+.inline-form input { flex: 1; min-width: 0; }
+
+.empty { text-align: center; padding: 28px 16px; color: var(--muted); border: 2px dashed var(--line); border-radius: var(--radius); display: grid; gap: 10px; justify-items: center; }
+.empty h3 { color: var(--ink); font-size: 22px; }
+
+/* Form e finestra */
+.overlay { position: fixed; inset: 0; z-index: 50; background: rgba(8, 14, 22, .6); display: flex; align-items: flex-end; justify-content: center; }
+.sheet { background: var(--surface); width: 100%; max-width: 560px; max-height: 92%; overflow-y: auto; border-radius: 16px 16px 0 0; padding: 18px max(16px, env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 12px; }
+@media (min-width: 600px) { .overlay { align-items: center; } .sheet { border-radius: 16px; max-height: 88%; padding: 20px; } }
+.sheet h2 { font-size: 26px; text-transform: uppercase; letter-spacing: .04em; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field label, .field .lbl { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+input[type=text], input[type=number], input[type=date], input[type=time], select, textarea {
+  width: 100%; min-height: 42px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg);
+}
+textarea { min-height: 70px; resize: vertical; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.check-line { display: flex; align-items: center; gap: 10px; }
+.check-line input { width: 22px; height: 22px; accent-color: var(--accent); }
+.drill-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+.drill-row .full { grid-column: 1 / -1; }
+.drill-row .nums { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.drill-row .nums input { width: 76px; }
+.drill-row .nums select { width: auto; }
+.form-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 60; background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 8px; max-width: calc(100% - 32px); font-size: 15px; }
+.loading { color: var(--muted); padding: 20px 0; }
+@media (prefers-reduced-motion: no-preference) { .btn, .place { transition: background-color .15s, border-color .15s; } }
+/* Titoli in rosa, bottoni e selezioni in nero; Fredoka rotondo e giocoso */
+h1, h2, h3, .empty h3 { color: var(--pink); letter-spacing: .02em; }
+.datebox { background: var(--pink); color: var(--on-pink); }
+.datebox .dow { font-size: 14px; opacity: .92; }
+.datebox .day { font-size: 36px; }
+.datebox .mon { font-size: 15px; }
+.place svg { color: var(--pink); }
+.brand h1 { font-size: 28px; letter-spacing: .02em; }
+nav.tabs a { font-weight: 700; font-size: clamp(12px, 3.6vw, 17px); letter-spacing: .02em; }
+.section-head h2 { font-size: 24px; }
+.sheet h2 { font-size: 24px; }
+.match h3 { font-size: 20px; }
+.training h3 { font-size: 22px; }
+.empty h3 { font-size: 20px; }
+h3[style] { font-size: 20px !important; }
+.times .big { font-size: 22px; }
+details.past summary { font-size: 18px; }
+.weeknav .label { font-size: 20px; }
+.stat .n { font-size: 30px; }
+.stat .n small { font-size: 17px; }
+.amount { font-size: 18px; }
+.owe-total { font-size: 44px; }
+.row .money { font-size: 20px; }
+/* Lilita One esiste solo in un peso: niente grassetto finto */
+h1, h2, h3, .datebox, .times .big, .stat .n, .amount, .owe-total, .row .money, .weeknav .label, details.past summary, nav.tabs a { font-weight: 400; }
+nav.tabs a { font-size: clamp(13px, 4vw, 19px); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><h1>Agenda Volley</h1><span id="whoami"></span></div>
+    <nav class="tabs" aria-label="Sezioni">
+      <a href="#partite" data-tab="partite">Partite</a>
+      <a href="#allenamenti" data-tab="allenamenti">Allenamenti</a>
+      <a href="#multe" data-tab="multe">Multe</a>
+    </nav>
+  </header>
+  <main id="view"><p class="loading">Caricamento dei dati della squadra…</p></main>
+</div>
+<div id="modal"></div>
+<div id="toast" class="toast" hidden></div>
+<input type="file" id="importfile" accept="application/json,.json" hidden>
+<script>
+(function () {
+  "use strict";
+  var $ = function (s) { return document.querySelector(s); };
+  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
+  var pad = function (n) { return String(n).padStart(2, "0"); };
+  var ymd = function (d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); };
+  var parse = function (s) { var p = String(s).split("-").map(Number); return new Date(p[0], p[1] - 1, p[2]); };
+  var today = function () { return ymd(new Date()); };
+  var mondayOf = function (d) { var x = new Date(d); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); x.setHours(0, 0, 0, 0); return x; };
+  var addDays = function (d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; };
+  var eur = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" });
+  var fmtMoney = function (n) { return eur.format(Number(n) || 0); };
+  var cap = function (s) { return s.charAt(0).toUpperCase() + s.slice(1); };
+  var dowShort = new Intl.DateTimeFormat("it-IT", { weekday: "short" });
+  var monShort = new Intl.DateTimeFormat("it-IT", { month: "short" });
+  var longDate = new Intl.DateTimeFormat("it-IT", { weekday: "long", day: "numeric", month: "long" });
+  var shortDate = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short" });
+
+  var state = {
+    tab: "partite", matches: [], trainings: [], rules: [], fines: [], players: [],
+    loaded: {}, weekStart: mondayOf(new Date()), confirm: null, filter: "unpaid", canWrite: true, error: null, showPast: false
+  };
+  var db = null;
+
+  /* ---------- scrittura ---------- */
+  function toast(msg) {
+    var t = $("#toast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(toast.h); toast.h = setTimeout(function () { t.hidden = true; }, 3200);
+  }
+  function fail(e) {
+    toast(e && e.code === "invalid_argument" ? "Non hai il permesso di modificare questi dati." : "Non è stato possibile salvare. Riprova tra poco.");
+  }
+  async function save(coll, id, data) {
+    if (!db) { toast("Dati non disponibili: apri la pagina da un account con accesso."); return false; }
+    try {
+      if (id) await db.doc(coll + "/" + id).set(data); else await db.collection(coll).add(data);
+      return true;
+    } catch (e) { fail(e); return false; }
+  }
+  async function patch(coll, id, data) {
+    try { await db.doc(coll + "/" + id).update(data); return true; } catch (e) { fail(e); return false; }
+  }
+  async function remove(coll, id) {
+    try { await db.doc(coll + "/" + id).delete(); return true; } catch (e) { fail(e); return false; }
+  }
+
+  /* ---------- finestra ---------- */
+  function openModal(title, bodyHtml, onSubmit, submitLabel) {
+    $("#modal").innerHTML = '<div class="overlay"><form class="sheet" id="mform" novalidate><h2>' + esc(title) + '</h2>' + bodyHtml +
+      '<div class="form-actions"><button type="button" class="btn" data-act="close">Annulla</button><button type="submit" class="btn primary">' + esc(submitLabel || "Salva") + '</button></div></form></div>';
+    var form = $("#mform");
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      var ok = await onSubmit(new FormData(form), form);
+      if (ok) closeModal();
+    });
+    var first = form.querySelector("input:not([type=checkbox]),select,textarea"); if (first) first.focus();
+  }
+  function closeModal() { $("#modal").innerHTML = ""; }
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
+  $("#modal").addEventListener("mousedown", function (e) { if (e.target.classList.contains("overlay")) closeModal(); });
+
+  var field = function (label, id, inner) { return '<div class="field"><label for="' + id + '">' + label + '</label>' + inner + '</div>'; };
+  var input = function (id, type, val, extra) { return '<input id="' + id + '" name="' + id + '" type="' + type + '" value="' + esc(val == null ? "" : val) + '" ' + (extra || "") + '>'; };
+
+  /* ---------- partite ---------- */
+  var pinSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>';
+  var checkSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  var idSvg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6.5 16c.6-1.5 1.7-2 2.5-2s1.9.5 2.5 2M14 10h4M14 13h3"/></svg>';
+
+  var byDate = function (a, b) { return (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")); };
+  var exTag = function (o) { return o.example ? ' <span class="pill example">Esempio</span>' : ""; };
+  var mapsUrl = function (m) { return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent((m.address || m.venue || "").trim()); };
+  function countdown(dateStr) {
+    var diff = Math.round((parse(dateStr) - parse(today())) / 86400000);
+    if (diff === 0) return "Oggi"; if (diff === 1) return "Domani"; if (diff < 0) return "";
+    return "Tra " + diff + " giorni";
+  }
+  function matchCard(m, isNext, isPast) {
+    var d = parse(m.date);
+    var place = (m.venue || m.address)
+      ? '<a class="place" href="' + esc(mapsUrl(m)) + '" target="_blank" rel="noopener">' + pinSvg + '<span><strong>' + esc(m.venue || m.address) + '</strong>' +
+        (m.venue && m.address ? '<small>' + esc(m.address) + '</small>' : '') + '<span class="go">Apri su Google Maps →</span></span></a>'
+      : '<p class="notice" style="margin-top:10px">Luogo da definire.</p>';
+    return '<article class="card match' + (isNext ? " next" : "") + (isPast ? " past" : "") + '">' +
+      '<div class="datebox"><span class="dow">' + esc(dowShort.format(d).replace(".", "")) + '</span><span class="day">' + d.getDate() + '</span><span class="mon">' + esc(monShort.format(d).replace(".", "")) + '</span></div>' +
+      '<div style="min-width:0"><div class="top"><div>' + (isNext ? '<div class="next-label">Prossima partita · ' + esc(countdown(m.date)) + '</div>' : '') +
+      '<h3>vs ' + esc(m.opponent || "Avversari da definire") + '</h3></div><span><span class="pill ' + (m.home === "away" ? "" : "home") + '">' + (m.home === "away" ? "Trasferta" : "Casa") + '</span>' + exTag(m) + '</span></div>' +
+      '<div class="times">' + (m.meetTime ? '<span><b>Ritrovo</b><span class="big">' + esc(m.meetTime) + '</span></span>' : '') +
+      (m.time ? '<span><b>Partita</b><span class="big">' + esc(m.time) + '</span></span>' : '') + '</div>' +
+      place +
+      (m.idReminder ? '<div class="idnote">' + idSvg + 'Porta la carta d\'identità</div>' : '') +
+      (m.notes ? '<p class="notes">' + esc(m.notes) + '</p>' : '') +
+      (state.canWrite ? '<div class="actions"><button class="btn small" data-act="edit-match" data-id="' + m.id + '">Modifica</button>' +
+        '<button class="btn small danger' + (state.confirm === "m" + m.id ? " armed" : "") + '" data-act="del-match" data-id="' + m.id + '">' + (state.confirm === "m" + m.id ? "Conferma eliminazione" : "Elimina") + '</button></div>' : '') +
+      '</div></article>';
+  }
+  function viewMatches() {
+    var t = today();
+    var up = state.matches.filter(function (m) { return m.date >= t; }).sort(byDate);
+    var past = state.matches.filter(function (m) { return m.date < t; }).sort(byDate).reverse();
+    var h = '<div class="section-head"><div><h2>Calendario partite</h2><p class="sub">' + up.length + (up.length === 1 ? " partita in programma" : " partite in programma") + '</p></div>' +
+      (state.canWrite ? '<button class="btn primary" data-act="add-match">+ Aggiungi partita</button>' : '') + '</div>';
+    if (!up.length) {
+      h += '<div class="empty"><h3>Nessuna partita in programma</h3><p>' + (state.canWrite ? "Aggiungi la prima partita: data, orario di ritrovo e palestra." : "Il calendario verrà aggiornato dall'allenatore.") + '</p>' +
+        (state.canWrite ? '<button class="btn primary" data-act="add-match">+ Aggiungi partita</button>' : '') + '</div>';
+    } else {
+      h += '<div class="grid">' + up.map(function (m, i) { return matchCard(m, i === 0, false); }).join("") + '</div>';
+    }
+    if (past.length) {
+      h += '<details class="past"' + (state.showPast ? " open" : "") + ' data-past><summary>Partite giocate (' + past.length + ')</summary><div class="grid" style="margin-top:10px">' +
+        past.map(function (m) { return matchCard(m, false, true); }).join("") + '</div></details>';
+    }
+    return h;
+  }
+  function editMatch(m) {
+    m = m || { date: today(), time: "20:00", meetTime: "19:15", home: "home", idReminder: true };
+    var body =
+      field("Avversari", "opponent", input("opponent", "text", m.opponent, 'placeholder="Es. Volley Rosa" required')) +
+      '<div class="two-col">' + field("Data", "date", input("date", "date", m.date, "required")) +
+      field("Casa o trasferta", "home", '<select id="home" name="home"><option value="home"' + (m.home !== "away" ? " selected" : "") + '>Casa</option><option value="away"' + (m.home === "away" ? " selected" : "") + '>Trasferta</option></select>') + '</div>' +
+      '<div class="two-col">' + field("Orario di ritrovo", "meetTime", input("meetTime", "time", m.meetTime)) + field("Inizio partita", "time", input("time", "time", m.time)) + '</div>' +
+      field("Nome della palestra", "venue", input("venue", "text", m.venue, 'placeholder="Es. Palestra Comunale"')) +
+      field("Indirizzo (usato per Google Maps)", "address", input("address", "text", m.address, 'placeholder="Via, numero, città"')) +
+      field("Note", "notes", '<textarea id="notes" name="notes" placeholder="Divisa, parcheggio, chi porta i palloni…">' + esc(m.notes || "") + '</textarea>') +
+      '<label class="check-line"><input type="checkbox" id="idReminder" name="idReminder"' + (m.idReminder ? " checked" : "") + '> Ricorda di portare la carta d\'identità</label>';
+    openModal(m.id ? "Modifica partita" : "Nuova partita", body, async function (fd) {
+      if (!fd.get("date")) { toast("Inserisci la data della partita."); return false; }
+      var data = Object.assign({}, m, {
+        opponent: String(fd.get("opponent") || "").trim(), date: fd.get("date"), home: fd.get("home"), meetTime: fd.get("meetTime") || "",
+        time: fd.get("time") || "", venue: String(fd.get("venue") || "").trim(), address: String(fd.get("address") || "").trim(),
+        notes: String(fd.get("notes") || "").trim(), idReminder: fd.get("idReminder") === "on"
+      });
+      delete data.id;
+      return save("matches", m.id, data);
+    });
+  }
+
+  /* ---------- allenamenti ---------- */
+  function drillAmount(d) { return d.mode === "rep" ? (d.sets || 1) + " × " + (d.reps || 0) : (d.minutes || 0) + " min"; }
+  function minutesOf(list, onlyDone) {
+    return (list || []).reduce(function (s, d) { return s + (d.mode === "rep" || (onlyDone && !d.done) ? 0 : Number(d.minutes) || 0); }, 0);
+  }
+  function trainingCard(t) {
+    var drills = t.drills || [], done = drills.filter(function (d) { return d.done; }).length;
+    var pct = drills.length ? Math.round(done / drills.length * 100) : 0;
+    var d = parse(t.date), mins = minutesOf(drills), hasRep = drills.some(function (x) { return x.mode === "rep"; });
+    return '<article class="card training"><div class="head"><div><h3>' + esc(t.title || "Allenamento") + exTag(t) + '</h3>' +
+      '<p class="meta">' + esc(cap(longDate.format(d))) + (t.time ? " · ore " + esc(t.time) : "") + '</p>' +
+      '<p class="meta">Durata esercizi: ' + mins + ' min' + (hasRep ? " + serie a ripetizioni" : "") + '</p></div>' +
+      '<span class="pill ' + (drills.length && done === drills.length ? "ok" : "") + '">' + done + '/' + drills.length + ' fatti</span></div>' +
+      '<div class="progress" role="progressbar" aria-valuenow="' + pct + '" aria-valuemin="0" aria-valuemax="100"><i style="width:' + pct + '%"></i></div>' +
+      (drills.length ? '<ul class="drills">' + drills.map(function (x, i) {
+        return '<li class="drill' + (x.done ? " done" : "") + '"><button class="check" data-act="toggle-drill" data-id="' + t.id + '" data-i="' + i + '" aria-pressed="' + (x.done ? "true" : "false") + '" aria-label="Segna come fatto: ' + esc(x.name) + '"' + (state.canWrite ? "" : " disabled") + '>' + checkSvg + '</button>' +
+          '<span class="name">' + esc(x.name) + '</span><span class="amount">' + esc(drillAmount(x)) + '</span></li>';
+      }).join("") + '</ul>' : '<p class="notice" style="margin-top:10px">Nessun esercizio inserito.</p>') +
+      (t.notes ? '<p class="notes">' + esc(t.notes) + '</p>' : '') +
+      (state.canWrite ? '<div class="actions"><button class="btn small" data-act="edit-training" data-id="' + t.id + '">Modifica</button>' +
+        '<button class="btn small danger' + (state.confirm === "t" + t.id ? " armed" : "") + '" data-act="del-training" data-id="' + t.id + '">' + (state.confirm === "t" + t.id ? "Conferma eliminazione" : "Elimina") + '</button></div>' : '') +
+      '</article>';
+  }
+  function viewTrainings() {
+    var start = state.weekStart, end = addDays(start, 6), s = ymd(start), e = ymd(end);
+    var inWeek = state.trainings.filter(function (t) { return t.date >= s && t.date <= e; }).sort(byDate);
+    var allDrills = [].concat.apply([], inWeek.map(function (t) { return t.drills || []; }));
+    var doneDrills = allDrills.filter(function (d) { return d.done; });
+    var held = inWeek.filter(function (t) { return (t.drills || []).some(function (d) { return d.done; }); });
+    var label = shortDate.format(start).replace(".", "") + " – " + shortDate.format(end).replace(".", "") + " " + end.getFullYear();
+    var isNow = ymd(mondayOf(new Date())) === s;
+
+    var h = '<div class="section-head"><h2>Allenamenti</h2>' + (state.canWrite ? '<button class="btn primary" data-act="add-training">+ Nuovo allenamento</button>' : '') + '</div>';
+    h += '<div class="weeknav"><button class="btn" data-act="week-prev" aria-label="Settimana precedente">←</button><div class="label">' + esc(label) + '</div>' +
+      '<button class="btn" data-act="week-next" aria-label="Settimana successiva">→</button>' + (isNow ? "" : '<button class="btn" data-act="week-now">Oggi</button>') + '</div>';
+
+    var strip = "";
+    for (var i = 0; i < 7; i++) {
+      var day = addDays(start, i), key = ymd(day);
+      var ds = inWeek.filter(function (t) { return t.date === key; });
+      var dd = [].concat.apply([], ds.map(function (t) { return t.drills || []; }));
+      var pc = dd.length ? Math.round(dd.filter(function (x) { return x.done; }).length / dd.length * 100) : 0;
+      strip += '<div class="d' + (key === today() ? " today" : "") + '">' + esc(dowShort.format(day).replace(".", "")) + ' ' + day.getDate() + '<div class="bar' + (ds.length ? " has" : "") + '" title="' + (ds.length ? pc + "% completato" : "Nessun allenamento") + '"><i style="height:' + pc + '%"></i></div></div>';
+    }
+    h += '<section class="card" aria-label="Riepilogo della settimana"><h3 style="font-size:22px;text-transform:uppercase;letter-spacing:.04em">Riepilogo della settimana</h3>' +
+      '<div class="stats" style="margin-top:10px"><div class="stat"><div class="n">' + held.length + '<small>/' + inWeek.length + '</small></div><div class="l">allenamenti svolti</div></div>' +
+      '<div class="stat"><div class="n">' + doneDrills.length + '<small>/' + allDrills.length + '</small></div><div class="l">esercizi completati</div></div>' +
+      '<div class="stat"><div class="n">' + minutesOf(allDrills, true) + '<small> min</small></div><div class="l">di lavoro fatto</div></div></div>' +
+      '<div class="strip">' + strip + '</div>' +
+      '<div class="done-list">' + (held.length ? held.map(function (t) {
+        return '<div class="item"><b>' + esc(cap(dowShort.format(parse(t.date)).replace(".", ""))) + ' ' + parse(t.date).getDate() + ' · ' + esc(t.title) + '</b><br><span class="meta">' +
+          esc((t.drills || []).filter(function (d) { return d.done; }).map(function (d) { return d.name + " (" + drillAmount(d) + ")"; }).join(", ")) + '</span></div>';
+      }).join("") : '<p class="sub">Ancora niente di completato in questa settimana. Spunta gli esercizi man mano che li fate.</p>') + '</div></section>';
+
+    if (!inWeek.length) {
+      h += '<div class="empty"><h3>Nessun allenamento in questa settimana</h3><p>' + (state.canWrite ? "Aggiungi una seduta con la lista degli esercizi." : "Prova a guardare un'altra settimana.") + '</p>' +
+        (state.canWrite ? '<button class="btn primary" data-act="add-training">+ Nuovo allenamento</button>' : '') + '</div>';
+    } else h += '<div class="grid two">' + inWeek.map(trainingCard).join("") + '</div>';
+    return h;
+  }
+  function drillRow(d) {
+    d = d || { name: "", mode: "min", minutes: 10, sets: 3, reps: 10, done: false };
+    var rep = d.mode === "rep";
+    return '<div class="drill-row" data-done="' + (d.done ? "1" : "0") + '"><input type="text" class="d-name" placeholder="Es. Palleggio a coppie" value="' + esc(d.name) + '" aria-label="Nome esercizio">' +
+      '<button type="button" class="btn small danger" data-act="rm-drill">Togli</button>' +
+      '<div class="nums full"><select class="d-mode" aria-label="Tipo"><option value="min"' + (rep ? "" : " selected") + '>Minuti</option><option value="rep"' + (rep ? " selected" : "") + '>Serie × ripetizioni</option></select>' +
+      '<span class="d-min"' + (rep ? " hidden" : "") + '><input type="number" min="1" class="d-minutes" value="' + (d.minutes || 10) + '" aria-label="Minuti"> min</span>' +
+      '<span class="d-rep"' + (rep ? "" : " hidden") + '><input type="number" min="1" class="d-sets" value="' + (d.sets || 3) + '" aria-label="Serie"> × <input type="number" min="1" class="d-reps" value="' + (d.reps || 10) + '" aria-label="Ripetizioni"></span></div></div>';
+  }
+  function editTraining(t) {
+    var monday = ymd(state.weekStart);
+    t = t || { date: monday <= today() && today() <= ymd(addDays(state.weekStart, 6)) ? today() : monday, time: "20:30", title: "", drills: [] };
+    var body = field("Titolo", "title", input("title", "text", t.title, 'placeholder="Es. Ricezione e difesa" required')) +
+      '<div class="two-col">' + field("Data", "date", input("date", "date", t.date, "required")) + field("Orario", "time", input("time", "time", t.time)) + '</div>' +
+      '<div class="field"><span class="lbl">Esercizi</span><div id="drills" style="display:grid;gap:8px">' + (t.drills || []).map(drillRow).join("") + '</div>' +
+      '<button type="button" class="btn small" data-act="add-drill" style="justify-self:start;margin-top:4px">+ Aggiungi esercizio</button></div>' +
+      field("Note", "notes", '<textarea id="notes" name="notes" placeholder="Cosa portare, obiettivi della seduta…">' + esc(t.notes || "") + '</textarea>');
+    openModal(t.id ? "Modifica allenamento" : "Nuovo allenamento", body, async function (fd, form) {
+      if (!fd.get("date")) { toast("Inserisci la data dell'allenamento."); return false; }
+      var drills = [].map.call(form.querySelectorAll(".drill-row"), function (r) {
+        var mode = r.querySelector(".d-mode").value;
+        return { name: r.querySelector(".d-name").value.trim(), mode: mode, minutes: Number(r.querySelector(".d-minutes").value) || 0,
+          sets: Number(r.querySelector(".d-sets").value) || 1, reps: Number(r.querySelector(".d-reps").value) || 0, done: r.dataset.done === "1" };
+      }).filter(function (d) { return d.name; });
+      var data = Object.assign({}, t, { title: String(fd.get("title") || "").trim() || "Allenamento", date: fd.get("date"), time: fd.get("time") || "", notes: String(fd.get("notes") || "").trim(), drills: drills });
+      delete data.id;
+      var ok = await save("trainings", t.id, data);
+      if (ok) state.weekStart = mondayOf(parse(data.date));
+      return ok;
+    });
+  }
+
+  /* ---------- multe ---------- */
+  function owedByPlayer() {
+    var map = {};
+    state.fines.forEach(function (f) { if (!f.paid) map[f.player] = (map[f.player] || 0) + Number(f.amount || 0); });
+    return Object.keys(map).map(function (k) { return { name: k, total: map[k] }; }).sort(function (a, b) { return b.total - a.total; });
+  }
+  function viewFines() {
+    var owed = owedByPlayer(), total = owed.reduce(function (s, o) { return s + o.total; }, 0);
+    var h = '<div class="section-head"><h2>Multe</h2>' + (state.canWrite ? '<button class="btn primary" data-act="add-fine">+ Assegna una multa</button>' : '') + '</div>';
+
+    h += '<section class="card"><div class="section-head"><div><p class="sub">Totale ancora da incassare</p><div class="owe-total' + (total ? "" : " zero") + '">' + fmtMoney(total) + '</div></div></div>';
+    if (owed.length) {
+      h += '<div class="rows">' + owed.map(function (o) {
+        return '<div class="row"><div class="who"><strong>' + esc(o.name) + '</strong><span class="meta">deve pagare</span></div><span class="money">' + fmtMoney(o.total) + '</span>' +
+          (state.canWrite ? '<button class="btn small" data-act="pay-player" data-name="' + esc(o.name) + '">Ha pagato tutto</button>' : '') + '</div>';
+      }).join("") + '</div>';
+    } else h += '<p class="sub" style="margin-top:10px">Nessuno deve niente alla squadra.</p>';
+    h += '</section>';
+
+    var list = state.fines.filter(function (f) { return state.filter === "all" || (state.filter === "unpaid" ? !f.paid : f.paid); })
+      .sort(function (a, b) { return b.date.localeCompare(a.date); });
+    h += '<section class="card"><div class="section-head"><h3 style="font-size:22px;text-transform:uppercase;letter-spacing:.04em">Registro multe</h3>' +
+      '<div class="seg" role="group" aria-label="Filtro">' + [["unpaid", "Da pagare"], ["paid", "Pagate"], ["all", "Tutte"]].map(function (f) {
+        return '<button data-act="filter" data-id="' + f[0] + '" aria-pressed="' + (state.filter === f[0]) + '">' + f[1] + '</button>'; }).join("") + '</div></div>';
+    h += list.length ? '<div class="rows">' + list.map(function (f) {
+      return '<div class="row"><div class="who"><strong>' + esc(f.player) + exTag(f) + '</strong><span class="meta">' + esc(f.reason) + ' · ' + esc(shortDate.format(parse(f.date)).replace(".", "")) + '</span></div>' +
+        '<span class="money' + (f.paid ? " paid" : "") + '">' + fmtMoney(f.amount) + '</span>' +
+        (state.canWrite ? '<button class="btn small" data-act="toggle-paid" data-id="' + f.id + '">' + (f.paid ? "Segna da pagare" : "Segna pagata") + '</button>' +
+          '<button class="btn small danger' + (state.confirm === "f" + f.id ? " armed" : "") + '" data-act="del-fine" data-id="' + f.id + '" aria-label="Elimina multa">' + (state.confirm === "f" + f.id ? "Conferma" : "×") + '</button>' :
+          '<span class="pill ' + (f.paid ? "ok" : "bad") + '">' + (f.paid ? "Pagata" : "Da pagare") + '</span>') + '</div>';
+    }).join("") + '</div>' : '<p class="sub" style="margin-top:10px">' + (state.filter === "unpaid" ? "Nessuna multa da pagare." : "Nessuna multa in questo elenco.") + '</p>';
+    h += '</section>';
+
+    h += '<div class="grid two"><section class="card"><div class="section-head"><h3 style="font-size:22px;text-transform:uppercase;letter-spacing:.04em">Le regole</h3>' +
+      (state.canWrite ? '<button class="btn small" data-act="add-rule">+ Nuova regola</button>' : '') + '</div>';
+    h += state.rules.length ? '<div class="rows">' + state.rules.slice().sort(function (a, b) { return a.name.localeCompare(b.name); }).map(function (r) {
+      return '<div class="row"><div class="who"><strong>' + esc(r.name) + '</strong></div><span class="money">' + fmtMoney(r.amount) + '</span>' +
+        (state.canWrite ? '<button class="btn small" data-act="edit-rule" data-id="' + r.id + '">Modifica</button><button class="btn small danger' + (state.confirm === "r" + r.id ? " armed" : "") + '" data-act="del-rule" data-id="' + r.id + '" aria-label="Elimina regola">' + (state.confirm === "r" + r.id ? "Conferma" : "×") + '</button>' : '') + '</div>';
+    }).join("") + '</div>' : '<p class="sub" style="margin-top:10px">Nessuna regola. Aggiungi le multe che avete deciso, ad esempio il ritardo.</p>';
+    h += '</section><section class="card"><h3 style="font-size:22px;text-transform:uppercase;letter-spacing:.04em">Giocatori</h3>';
+    h += state.players.length ? '<div class="chips">' + state.players.slice().sort(function (a, b) { return a.name.localeCompare(b.name); }).map(function (p) {
+      return '<span class="chip">' + esc(p.name) + (state.canWrite ? '<button data-act="del-player" data-id="' + p.id + '" aria-label="Rimuovi ' + esc(p.name) + '">×</button>' : '') + '</span>'; }).join("") + '</div>' :
+      '<p class="sub" style="margin-top:10px">Aggiungi i nomi della squadra per poter assegnare le multe.</p>';
+    if (state.canWrite) h += '<form class="inline-form" id="player-form"><input type="text" id="player-name" placeholder="Nome giocatore" aria-label="Nome giocatore" autocomplete="off"><button class="btn primary" type="submit">Aggiungi</button></form>';
+    h += '</section></div>';
+    return h;
+  }
+  function addFine() {
+    if (!state.players.length || !state.rules.length) { toast(!state.players.length ? "Prima aggiungi almeno un giocatore." : "Prima aggiungi almeno una regola."); return; }
+    var players = state.players.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+    var rules = state.rules.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+    var body = field("Chi", "player", '<select id="player" name="player">' + players.map(function (p) { return '<option>' + esc(p.name) + '</option>'; }).join("") + '</select>') +
+      field("Motivo", "rule", '<select id="rule" name="rule">' + rules.map(function (r) { return '<option value="' + r.id + '">' + esc(r.name) + ' (' + fmtMoney(r.amount) + ')</option>'; }).join("") + '</select>') +
+      field("Data", "date", input("date", "date", today(), "required"));
+    openModal("Assegna una multa", body, async function (fd) {
+      var r = state.rules.filter(function (x) { return x.id === fd.get("rule"); })[0]; if (!r) return false;
+      return save("fines", null, { player: fd.get("player"), reason: r.name, amount: Number(r.amount) || 0, date: fd.get("date") || today(), paid: false });
+    }, "Assegna");
+  }
+  function editRule(r) {
+    r = r || { name: "", amount: 2 };
+    var body = field("Cosa succede", "name", input("name", "text", r.name, 'placeholder="Es. Ritardo agli allenamenti" required')) +
+      field("Importo in euro", "amount", input("amount", "number", r.amount, 'min="0" step="0.5" required'));
+    openModal(r.id ? "Modifica regola" : "Nuova regola", body, async function (fd) {
+      var name = String(fd.get("name") || "").trim(); if (!name) { toast("Scrivi il motivo della multa."); return false; }
+      var data = Object.assign({}, r, { name: name, amount: Number(String(fd.get("amount")).replace(",", ".")) || 0 }); delete data.id;
+      return save("fineRules", r.id, data);
+    });
+  }
+
+  /* ---------- disegno ---------- */
+  function render() {
+    document.querySelectorAll("nav.tabs a").forEach(function (a) { if (a.dataset.tab === state.tab) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+    var v = $("#view");
+    if (state.error) { v.innerHTML = '<div class="empty"><h3>Dati non raggiungibili</h3><p>' + esc(state.error) + '</p></div>'; return; }
+    var need = ["matches", "trainings", "fineRules", "fines", "players"];
+    if (need.some(function (k) { return !state.loaded[k]; })) { if (!render.slow) return; }
+    var ex = [state.matches, state.trainings, state.rules, state.fines, state.players].reduce(function (n, a) { return n + a.filter(function (x) { return x.example; }).length; }, 0);
+    var banner = ex && state.canWrite ? '<div class="banner"><span>Stai vedendo dati di esempio. Cancellali quando inserisci quelli veri.</span><button class="btn small" data-act="clear-examples">Elimina gli esempi</button></div>' : "";
+    var readonly = state.canWrite ? "" : '<p class="notice">Stai guardando in sola lettura. Per modificare serve l\'accesso come collaboratore.</p>';
+    v.innerHTML = banner + readonly + (state.tab === "allenamenti" ? viewTrainings() : state.tab === "multe" ? viewFines() : viewMatches()) + dataCard();
+  }
+
+  /* ---------- eventi ---------- */
+  document.addEventListener("click", async function (e) {
+    var b = e.target.closest("[data-act]"); if (!b) return;
+    var act = b.dataset.act, id = b.dataset.id, get = function (arr) { return arr.filter(function (x) { return x.id === id; })[0]; };
+    var arm = function (key, fn) { if (state.confirm === key) { state.confirm = null; fn(); } else { state.confirm = key; render(); setTimeout(function () { if (state.confirm === key) { state.confirm = null; render(); } }, 4000); } };
+    if (act === "close") return closeModal();
+    if (act === "add-match") return editMatch();
+    if (act === "edit-match") return editMatch(get(state.matches));
+    if (act === "del-match") return arm("m" + id, function () { remove("matches", id); });
+    if (act === "add-training") return editTraining();
+    if (act === "edit-training") return editTraining(get(state.trainings));
+    if (act === "del-training") return arm("t" + id, function () { remove("trainings", id); });
+    if (act === "week-prev") { state.weekStart = addDays(state.weekStart, -7); return render(); }
+    if (act === "week-next") { state.weekStart = addDays(state.weekStart, 7); return render(); }
+    if (act === "week-now") { state.weekStart = mondayOf(new Date()); return render(); }
+    if (act === "add-drill") { $("#drills").insertAdjacentHTML("beforeend", drillRow()); var rows = $("#drills").querySelectorAll(".d-name"); rows[rows.length - 1].focus(); return; }
+    if (act === "rm-drill") return b.closest(".drill-row").remove();
+    if (act === "toggle-drill") {
+      var t = get(state.trainings); if (!t) return; var i = Number(b.dataset.i);
+      var drills = t.drills.map(function (d, k) { return k === i ? Object.assign({}, d, { done: !d.done }) : d; });
+      t.drills = drills; render(); return patch("trainings", id, { drills: drills });
+    }
+    if (act === "filter") { state.filter = id; return render(); }
+    if (act === "add-fine") return addFine();
+    if (act === "toggle-paid") { var f = get(state.fines); if (f) { f.paid = !f.paid; render(); patch("fines", id, { paid: f.paid }); } return; }
+    if (act === "del-fine") return arm("f" + id, function () { remove("fines", id); });
+    if (act === "pay-player") {
+      var name = b.dataset.name, mine = state.fines.filter(function (x) { return x.player === name && !x.paid; });
+      for (var k = 0; k < mine.length; k++) { if (!(await patch("fines", mine[k].id, { paid: true }))) break; }
+      return toast(name + ": tutto pagato.");
+    }
+    if (act === "add-rule") return editRule();
+    if (act === "edit-rule") return editRule(get(state.rules));
+    if (act === "del-rule") return arm("r" + id, function () { remove("fineRules", id); });
+    if (act === "del-player") { var p = get(state.players); if (p) arm("p" + id, function () { remove("players", id); }); return; }
+    if (act === "clear-examples") {
+      var map = [["matches", state.matches], ["trainings", state.trainings], ["fineRules", state.rules], ["fines", state.fines], ["players", state.players]];
+      for (var c = 0; c < map.length; c++) { var items = map[c][1].filter(function (x) { return x.example; }); for (var j = 0; j < items.length; j++) await remove(map[c][0], items[j].id); }
+      return toast("Esempi eliminati.");
+    }
+  });
+  document.addEventListener("change", function (e) {
+    if (e.target.classList && e.target.classList.contains("d-mode")) {
+      var r = e.target.closest(".drill-row"), rep = e.target.value === "rep";
+      r.querySelector(".d-min").hidden = rep; r.querySelector(".d-rep").hidden = !rep;
+    }
+    if (e.target.matches && e.target.matches("details[data-past]")) state.showPast = e.target.open;
+  });
+  document.addEventListener("toggle", function (e) { if (e.target.matches && e.target.matches("details[data-past]")) state.showPast = e.target.open; }, true);
+  document.addEventListener("submit", async function (e) {
+    if (e.target.id !== "player-form") return;
+    e.preventDefault();
+    var inp = $("#player-name"), name = inp.value.trim();
+    if (!name) return;
+    if (state.players.some(function (p) { return p.name.toLowerCase() === name.toLowerCase(); })) return toast("Questo nome c'è già.");
+    if (await save("players", null, { name: name })) { var n = $("#player-name"); if (n) { n.value = ""; n.focus(); } }
+  });
+
+  function route() {
+    var h = (location.hash || "").replace("#", "");
+    state.tab = ["partite", "allenamenti", "multe"].indexOf(h) >= 0 ? h : "partite";
+    render();
+  }
+  window.addEventListener("hashchange", function () { state.confirm = null; route(); window.scrollTo(0, 0); });
+
+  /* ---------- archivio locale: i dati restano su questo dispositivo ---------- */
+  var KEY = "agenda-volley-dati-v1";
+  var COLLS = ["matches", "trainings", "fineRules", "fines", "players"];
+  var store = null, listeners = {}, storageOk = true;
+  var copy = function (o) { return JSON.parse(JSON.stringify(o)); };
+  function loadStore() {
+    try { var s = localStorage.getItem(KEY); if (s) { var o = JSON.parse(s); if (o && typeof o === "object") return o; } } catch (e) { storageOk = false; }
+    return null;
+  }
+  function persist() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) { storageOk = false; } }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function snapshotOf(c) {
+    var m = store[c] || {};
+    return { docs: Object.keys(m).map(function (id) { var d = m[id]; return { id: id, data: function () { return copy(d); } }; }) };
+  }
+  function notify(c) { setTimeout(function () { (listeners[c] || []).forEach(function (fn) { fn(snapshotOf(c)); }); }, 0); }
+  function notifyAll() { COLLS.forEach(notify); }
+  var localDb = {
+    collection: function (c) {
+      return {
+        onSnapshot: function (next) { (listeners[c] = listeners[c] || []).push(next); setTimeout(function () { next(snapshotOf(c)); }, 0); return function () {}; },
+        add: async function (data) { var id = uid(); store[c] = store[c] || {}; store[c][id] = copy(data); persist(); notify(c); return { id: id }; }
+      };
+    },
+    doc: function (path) {
+      var p = path.split("/"), c = p[0], id = p[1];
+      return {
+        set: async function (data) { store[c] = store[c] || {}; store[c][id] = copy(data); persist(); notify(c); },
+        update: async function (data) {
+          if (!store[c] || !store[c][id]) { var err = new Error("missing"); err.code = "invalid_argument"; throw err; }
+          Object.assign(store[c][id], copy(data)); persist(); notify(c);
+        },
+        delete: async function () { if (store[c]) { delete store[c][id]; persist(); notify(c); } }
+      };
+    }
+  };
+
+  /* dati di esempio al primo avvio, con date calcolate da oggi */
+  function seed() {
+    var iso = function (n) { var d = new Date(); d.setDate(d.getDate() + n); return ymd(d); };
+    var dr = function (name, minutes, done) { return { name: name, mode: "min", minutes: minutes, sets: 1, reps: 0, done: !!done }; };
+    var rp = function (name, sets, reps, done) { return { name: name, mode: "rep", minutes: 0, sets: sets, reps: reps, done: !!done }; };
+    var s = { matches: {}, trainings: {}, fineRules: {}, fines: {}, players: {} };
+    s.matches["ex-m1"] = { example: true, opponent: "Volley Rosa", date: iso(3), home: "away", meetTime: "18:45", time: "20:00", venue: "Palestra Comunale", address: "Via Roma 12, Roma", notes: "Portare la divisa e la borraccia.", idReminder: true };
+    s.matches["ex-m2"] = { example: true, opponent: "Pallavolo Aurora", date: iso(17), home: "home", meetTime: "17:30", time: "18:30", venue: "Palazzetto dello Sport", address: "Via dello Sport 3, Roma", notes: "", idReminder: false };
+    s.matches["ex-m3"] = { example: true, opponent: "Team Libeccio", date: iso(-4), home: "home", meetTime: "19:00", time: "20:00", venue: "Palazzetto dello Sport", address: "Via dello Sport 3, Roma", notes: "", idReminder: false };
+    s.trainings["ex-t1"] = { example: true, title: "Ricezione e difesa", date: iso(-1), time: "20:30", notes: "", drills: [dr("Riscaldamento e mobilità", 15, true), rp("Ricezione di battuta", 4, 10, true), dr("Difesa in campo a coppie", 20, true), dr("Partitella 6 contro 6", 25, false)] };
+    s.trainings["ex-t2"] = { example: true, title: "Battuta e attacco", date: iso(1), time: "20:30", notes: "Portare le ginocchiere.", drills: [dr("Riscaldamento", 15), rp("Battuta float", 3, 15), dr("Attacco da posto 4", 25), dr("Defaticamento e stretching", 10)] };
+    s.trainings["ex-t3"] = { example: true, title: "Muro e copertura", date: iso(8), time: "20:30", notes: "", drills: [dr("Riscaldamento", 15), rp("Muro a due", 5, 8), dr("Gioco di squadra", 30)] };
+    ["Giulia", "Marta", "Sara", "Chiara"].forEach(function (n, i) { s.players["ex-p" + (i + 1)] = { example: true, name: n }; });
+    [["Ritardo all'allenamento", 2], ["Ritardo alla partita", 5], ["Carta d'identità dimenticata", 5], ["Assenza senza avviso", 10]].forEach(function (r, i) { s.fineRules["ex-r" + (i + 1)] = { example: true, name: r[0], amount: r[1] }; });
+    s.fines["ex-f1"] = { example: true, player: "Giulia", reason: "Ritardo all'allenamento", amount: 2, date: iso(-1), paid: false };
+    s.fines["ex-f2"] = { example: true, player: "Marta", reason: "Carta d'identità dimenticata", amount: 5, date: iso(-4), paid: false };
+    s.fines["ex-f3"] = { example: true, player: "Giulia", reason: "Ritardo alla partita", amount: 5, date: iso(-4), paid: false };
+    s.fines["ex-f4"] = { example: true, player: "Sara", reason: "Ritardo all'allenamento", amount: 2, date: iso(-8), paid: true };
+    return s;
+  }
+
+  /* ---------- esporta e importa i dati ---------- */
+  function dataCard() {
+    return '<section class="card"><h3 style="font-size:22px">I dati della squadra</h3>' +
+      '<p class="sub" style="margin-top:6px">I dati sono salvati su questo dispositivo. Per passarli alla squadra: esporta il file, mandalo nel gruppo e chi lo riceve lo importa.</p>' +
+      (storageOk ? "" : '<p class="notice" style="margin-top:8px">Questo browser non permette di salvare i dati. Esporta il file prima di chiudere la pagina.</p>') +
+      '<div class="actions"><button class="btn" data-act="export">Esporta dati</button><button class="btn" data-act="import">Importa dati</button></div></section>';
+  }
+  function exportData() {
+    var blob = new Blob([JSON.stringify({ app: "agenda-volley", version: 1, data: store }, null, 1)], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "agenda-volley-" + today() + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+    toast("File dei dati pronto.");
+  }
+  function askImport(d) {
+    openModal("Importare i dati?", '<p>I dati di questo dispositivo (partite, allenamenti, multe e giocatori) verranno sostituiti con quelli del file.</p>', async function () {
+      var n = {}; COLLS.forEach(function (c) { n[c] = d[c] && typeof d[c] === "object" ? d[c] : {}; });
+      store = n; persist(); notifyAll(); toast("Dati importati."); return true;
+    }, "Sostituisci i dati");
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-act]"); if (!b) return;
+    if (b.dataset.act === "export") exportData();
+    if (b.dataset.act === "import") $("#importfile").click();
+  });
+  $("#importfile").addEventListener("change", function () {
+    var f = this.files[0]; this.value = ""; if (!f) return;
+    var r = new FileReader();
+    r.onload = function () {
+      try { var o = JSON.parse(r.result); if (!o || o.app !== "agenda-volley" || !o.data) throw new Error("formato"); askImport(o.data); }
+      catch (err) { toast("Questo file non è un export di Agenda Volley."); }
+    };
+    r.readAsText(f);
+  });
+
+  /* ---------- avvio ---------- */
+  var map = { matches: "matches", trainings: "trainings", fineRules: "rules", fines: "fines", players: "players" };
+  function start() {
+    route();
+    store = loadStore();
+    if (!store) { store = seed(); persist(); }
+    COLLS.forEach(function (c) { store[c] = store[c] || {}; });
+    db = localDb;
+    Object.keys(map).forEach(function (coll) {
+      db.collection(coll).onSnapshot(function (snap) {
+        state[map[coll]] = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
+        state.loaded[coll] = true;
+        if (Object.keys(state.loaded).length === 5) render.slow = true;
+        if (!document.querySelector("#mform")) render();
+      });
+    });
+  }
+  start();
+})();
+</script>
+</body>
+</html>
