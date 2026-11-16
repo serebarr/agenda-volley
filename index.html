@@ -251,7 +251,6 @@ nav.tabs a { font-size: clamp(13px, 4vw, 19px); }
 <div id="toast" class="toast" hidden></div>
 <input type="file" id="importfile" accept="application/json,.json" hidden>
 <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script>
@@ -277,7 +276,7 @@ nav.tabs a { font-size: clamp(13px, 4vw, 19px); }
     tab: "partite", matches: [], trainings: [], rules: [], fines: [], players: [],
     loaded: {}, weekStart: mondayOf(new Date()), confirm: null, filter: "unpaid", canWrite: false, error: null, showPast: false
   };
-  var db = null, auth = null;
+  var db = null;
 
   /* ---------- scrittura ---------- */
   function toast(msg) {
@@ -288,7 +287,7 @@ nav.tabs a { font-size: clamp(13px, 4vw, 19px); }
     toast(e && e.code === "invalid_argument" ? "Non hai il permesso di modificare questi dati." : "Non è stato possibile salvare. Riprova tra poco.");
   }
   async function save(coll, id, data) {
-    if (!state.canWrite) { toast("Solo Serena può modificare i dati."); return false; }
+    if (!state.canWrite) { toast("Le modifiche sono disponibili dopo il collegamento al database."); return false; }
     if (!db) { toast("Dati non disponibili: apri la pagina da un account con accesso."); return false; }
     try {
       if (id) await db.doc(coll + "/" + id).set(data); else await db.collection(coll).add(data);
@@ -567,7 +566,7 @@ nav.tabs a { font-size: clamp(13px, 4vw, 19px); }
     if (need.some(function (k) { return !state.loaded[k]; })) { if (!render.slow) return; }
     var ex = [state.matches, state.trainings, state.rules, state.fines, state.players].reduce(function (n, a) { return n + a.filter(function (x) { return x.example; }).length; }, 0);
     var banner = ex && state.canWrite ? '<div class="banner"><span>Stai vedendo dati di esempio. Cancellali quando inserisci quelli veri.</span><button class="btn small" data-act="clear-examples">Elimina gli esempi</button></div>' : "";
-    var readonly = state.canWrite ? "" : '<p class="notice">Stai guardando in sola lettura. Solo Serena può modificare i dati.</p>';
+    var readonly = state.canWrite ? "" : '<p class="notice">Stai guardando in sola lettura. Le modifiche sono disponibili dopo il collegamento al database.</p>';
     v.innerHTML = banner + readonly + (state.tab === "allenamenti" ? viewTrainings() : state.tab === "multe" ? viewFines() : viewMatches()) + dataCard();
   }
 
@@ -646,7 +645,7 @@ nav.tabs a { font-size: clamp(13px, 4vw, 19px); }
   /* ---------- esporta e importa i dati ---------- */
   function dataCard() {
     return '<section class="card"><h3 style="font-size:22px">I dati della squadra</h3>' +
-      '<p class="sub">Le informazioni sono condivise online e si aggiornano automaticamente. Solo Serena può modificarle.</p>' +
+      '<p class="sub">Le informazioni sono condivise online e si aggiornano automaticamente. Tutti possono modificarle senza accesso.</p>' +
       (state.canWrite ? '<div class="actions"><button class="btn" data-act="export">Scarica backup</button><button class="btn" data-act="import">Importa backup precedente</button></div>' : '') + '</section>';
   }
   function exportData() {
@@ -666,7 +665,7 @@ nav.tabs a { font-size: clamp(13px, 4vw, 19px); }
     });
     if (!valid) return toast("Il backup non contiene dati validi.");
     openModal("Sostituire i dati online?", '<p>Il backup sostituirà partite, allenamenti, multe e giocatori per tutta la squadra. Scarica prima un backup dei dati attuali.</p>', async function () {
-      if (!state.canWrite || !navigator.onLine) { toast("Accedi come Serena e verifica la connessione."); return false; }
+      if (!state.canWrite || !navigator.onLine) { toast("Verifica la connessione prima di importare i dati."); return false; }
       try {
         var snapshots = await Promise.all(COLLS.map(function (c) { return db.collection(c).get({ source: "server" }); }));
         var ops = [];
@@ -699,36 +698,18 @@ nav.tabs a { font-size: clamp(13px, 4vw, 19px); }
   /* ---------- avvio ---------- */
   var map = { matches: "matches", trainings: "trainings", fineRules: "rules", fines: "fines", players: "players" };
   function accessCard() {
-    if (!auth) return;
-    $("#access").innerHTML = state.canWrite
-      ? '<p><strong>Accesso Serena</strong> · Modifiche abilitate</p><button class="btn" id="logout">Esci</button>'
-      : '<p>Consultazione pubblica · Solo Serena può modificare</p>' + (auth.currentUser
-        ? '<p>Questo account non è autorizzato.</p><button class="btn" id="logout">Esci</button>'
-        : '<button class="btn" id="login">Accesso Serena</button>');
-    var logout = $("#logout"), login = $("#login");
-    if (logout) logout.onclick = function () { auth.signOut().catch(fail); };
-    if (login) login.onclick = function () {
-      openModal("Accesso Serena", field("Email", "email", input("email", "email", "", 'required autocomplete="username"')) +
-        field("Password", "password", input("password", "password", "", 'required autocomplete="current-password"')), async function (fd) {
-        try { await auth.signInWithEmailAndPassword(String(fd.get("email")).trim(), String(fd.get("password"))); return true; }
-        catch (e) { toast("Accesso non riuscito. Controlla le credenziali e la connessione."); return false; }
-      }, "Accedi");
-    };
+    $("#access").innerHTML = '<p><strong>Agenda condivisa</strong> · Tutti possono aggiungere, modificare e cancellare i dati senza login.</p>';
   }
   function start() {
     route();
     var config = window.AGENDA_FIREBASE;
-    if (!config || !config.firebase || !config.firebase.apiKey || !config.serenaUid) {
+    if (!config || !config.firebase || !config.firebase.apiKey) {
       state.error = "L’archivio condiviso non è ancora configurato. Segui la guida ATTIVAZIONE.md."; render(); return;
     }
     try {
       firebase.initializeApp(config.firebase);
-      db = firebase.firestore(); auth = firebase.auth();
-      auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(fail);
-      auth.onAuthStateChanged(function (user) {
-        state.canWrite = !!user && user.uid === config.serenaUid;
-        closeModal(); accessCard(); render();
-      });
+      db = firebase.firestore();
+      state.canWrite = true;
       accessCard();
       COLLS.forEach(function (coll) {
         db.collection(coll).onSnapshot({ includeMetadataChanges: true }, function (snap) {
