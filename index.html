@@ -243,11 +243,17 @@ nav.tabs a { font-size: clamp(13px, 4vw, 19px); }
       <a href="#multe" data-tab="multe">Multe</a>
     </nav>
   </header>
+  <p id="connection" class="notice" role="status">Collegamento all’archivio online…</p>
+<section id="access" class="card" aria-live="polite"></section>
   <main id="view"><p class="loading">Caricamento dei dati della squadra…</p></main>
 </div>
 <div id="modal"></div>
 <div id="toast" class="toast" hidden></div>
 <input type="file" id="importfile" accept="application/json,.json" hidden>
+<script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
 <script>
 (function () {
   "use strict";
@@ -269,9 +275,9 @@ nav.tabs a { font-size: clamp(13px, 4vw, 19px); }
 
   var state = {
     tab: "partite", matches: [], trainings: [], rules: [], fines: [], players: [],
-    loaded: {}, weekStart: mondayOf(new Date()), confirm: null, filter: "unpaid", canWrite: true, error: null, showPast: false
+    loaded: {}, weekStart: mondayOf(new Date()), confirm: null, filter: "unpaid", canWrite: false, error: null, showPast: false
   };
-  var db = null;
+  var db = null, auth = null;
 
   /* ---------- scrittura ---------- */
   function toast(msg) {
@@ -282,6 +288,7 @@ nav.tabs a { font-size: clamp(13px, 4vw, 19px); }
     toast(e && e.code === "invalid_argument" ? "Non hai il permesso di modificare questi dati." : "Non è stato possibile salvare. Riprova tra poco.");
   }
   async function save(coll, id, data) {
+    if (!state.canWrite) { toast("Solo Serena può modificare i dati."); return false; }
     if (!db) { toast("Dati non disponibili: apri la pagina da un account con accesso."); return false; }
     try {
       if (id) await db.doc(coll + "/" + id).set(data); else await db.collection(coll).add(data);
@@ -289,9 +296,11 @@ nav.tabs a { font-size: clamp(13px, 4vw, 19px); }
     } catch (e) { fail(e); return false; }
   }
   async function patch(coll, id, data) {
+    if (!state.canWrite) return false;
     try { await db.doc(coll + "/" + id).update(data); return true; } catch (e) { fail(e); return false; }
   }
   async function remove(coll, id) {
+    if (!state.canWrite) return false;
     try { await db.doc(coll + "/" + id).delete(); return true; } catch (e) { fail(e); return false; }
   }
 
@@ -558,7 +567,7 @@ nav.tabs a { font-size: clamp(13px, 4vw, 19px); }
     if (need.some(function (k) { return !state.loaded[k]; })) { if (!render.slow) return; }
     var ex = [state.matches, state.trainings, state.rules, state.fines, state.players].reduce(function (n, a) { return n + a.filter(function (x) { return x.example; }).length; }, 0);
     var banner = ex && state.canWrite ? '<div class="banner"><span>Stai vedendo dati di esempio. Cancellali quando inserisci quelli veri.</span><button class="btn small" data-act="clear-examples">Elimina gli esempi</button></div>' : "";
-    var readonly = state.canWrite ? "" : '<p class="notice">Stai guardando in sola lettura. Per modificare serve l\'accesso come collaboratore.</p>';
+    var readonly = state.canWrite ? "" : '<p class="notice">Stai guardando in sola lettura. Solo Serena può modificare i dati.</p>';
     v.innerHTML = banner + readonly + (state.tab === "allenamenti" ? viewTrainings() : state.tab === "multe" ? viewFines() : viewMatches()) + dataCard();
   }
 
@@ -566,6 +575,7 @@ nav.tabs a { font-size: clamp(13px, 4vw, 19px); }
   document.addEventListener("click", async function (e) {
     var b = e.target.closest("[data-act]"); if (!b) return;
     var act = b.dataset.act, id = b.dataset.id, get = function (arr) { return arr.filter(function (x) { return x.id === id; })[0]; };
+    if (!state.canWrite && ["close", "week-prev", "week-next", "week-now", "filter"].indexOf(act) < 0) return;
     var arm = function (key, fn) { if (state.confirm === key) { state.confirm = null; fn(); } else { state.confirm = key; render(); setTimeout(function () { if (state.confirm === key) { state.confirm = null; render(); } }, 4000); } };
     if (act === "close") return closeModal();
     if (act === "add-match") return editMatch();
@@ -582,15 +592,15 @@ nav.tabs a { font-size: clamp(13px, 4vw, 19px); }
     if (act === "toggle-drill") {
       var t = get(state.trainings); if (!t) return; var i = Number(b.dataset.i);
       var drills = t.drills.map(function (d, k) { return k === i ? Object.assign({}, d, { done: !d.done }) : d; });
-      t.drills = drills; render(); return patch("trainings", id, { drills: drills });
+      return patch("trainings", id, { drills: drills });
     }
     if (act === "filter") { state.filter = id; return render(); }
     if (act === "add-fine") return addFine();
-    if (act === "toggle-paid") { var f = get(state.fines); if (f) { f.paid = !f.paid; render(); patch("fines", id, { paid: f.paid }); } return; }
+    if (act === "toggle-paid") { var f = get(state.fines); if (f) { patch("fines", id, { paid: !f.paid }); } return; }
     if (act === "del-fine") return arm("f" + id, function () { remove("fines", id); });
     if (act === "pay-player") {
       var name = b.dataset.name, mine = state.fines.filter(function (x) { return x.player === name && !x.paid; });
-      for (var k = 0; k < mine.length; k++) { if (!(await patch("fines", mine[k].id, { paid: true }))) break; }
+      for (var k = 0; k < mine.length; k++) { if (!(await patch("fines", mine[k].id, { paid: true }))) return; }
       return toast(name + ": tutto pagato.");
     }
     if (act === "add-rule") return editRule();
@@ -614,6 +624,7 @@ nav.tabs a { font-size: clamp(13px, 4vw, 19px); }
   document.addEventListener("submit", async function (e) {
     if (e.target.id !== "player-form") return;
     e.preventDefault();
+    if (!state.canWrite) return;
     var inp = $("#player-name"), name = inp.value.trim();
     if (!name) return;
     if (state.players.some(function (p) { return p.name.toLowerCase() === name.toLowerCase(); })) return toast("Questo nome c'è già.");
@@ -627,70 +638,16 @@ nav.tabs a { font-size: clamp(13px, 4vw, 19px); }
   }
   window.addEventListener("hashchange", function () { state.confirm = null; route(); window.scrollTo(0, 0); });
 
-  /* ---------- archivio locale: i dati restano su questo dispositivo ---------- */
-  var KEY = "agenda-volley-dati-v1";
+  /* Archivio condiviso: nessun salvataggio dei dati squadra sul dispositivo. */
   var COLLS = ["matches", "trainings", "fineRules", "fines", "players"];
-  var store = null, listeners = {}, storageOk = true;
+  var store = {};
   var copy = function (o) { return JSON.parse(JSON.stringify(o)); };
-  function loadStore() {
-    try { var s = localStorage.getItem(KEY); if (s) { var o = JSON.parse(s); if (o && typeof o === "object") return o; } } catch (e) { storageOk = false; }
-    return null;
-  }
-  function persist() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) { storageOk = false; } }
-  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
-  function snapshotOf(c) {
-    var m = store[c] || {};
-    return { docs: Object.keys(m).map(function (id) { var d = m[id]; return { id: id, data: function () { return copy(d); } }; }) };
-  }
-  function notify(c) { setTimeout(function () { (listeners[c] || []).forEach(function (fn) { fn(snapshotOf(c)); }); }, 0); }
-  function notifyAll() { COLLS.forEach(notify); }
-  var localDb = {
-    collection: function (c) {
-      return {
-        onSnapshot: function (next) { (listeners[c] = listeners[c] || []).push(next); setTimeout(function () { next(snapshotOf(c)); }, 0); return function () {}; },
-        add: async function (data) { var id = uid(); store[c] = store[c] || {}; store[c][id] = copy(data); persist(); notify(c); return { id: id }; }
-      };
-    },
-    doc: function (path) {
-      var p = path.split("/"), c = p[0], id = p[1];
-      return {
-        set: async function (data) { store[c] = store[c] || {}; store[c][id] = copy(data); persist(); notify(c); },
-        update: async function (data) {
-          if (!store[c] || !store[c][id]) { var err = new Error("missing"); err.code = "invalid_argument"; throw err; }
-          Object.assign(store[c][id], copy(data)); persist(); notify(c);
-        },
-        delete: async function () { if (store[c]) { delete store[c][id]; persist(); notify(c); } }
-      };
-    }
-  };
-
-  /* dati di esempio al primo avvio, con date calcolate da oggi */
-  function seed() {
-    var iso = function (n) { var d = new Date(); d.setDate(d.getDate() + n); return ymd(d); };
-    var dr = function (name, minutes, done) { return { name: name, mode: "min", minutes: minutes, sets: 1, reps: 0, done: !!done }; };
-    var rp = function (name, sets, reps, done) { return { name: name, mode: "rep", minutes: 0, sets: sets, reps: reps, done: !!done }; };
-    var s = { matches: {}, trainings: {}, fineRules: {}, fines: {}, players: {} };
-    s.matches["ex-m1"] = { example: true, opponent: "Volley Rosa", date: iso(3), home: "away", meetTime: "18:45", time: "20:00", venue: "Palestra Comunale", address: "Via Roma 12, Roma", notes: "Portare la divisa e la borraccia.", idReminder: true };
-    s.matches["ex-m2"] = { example: true, opponent: "Pallavolo Aurora", date: iso(17), home: "home", meetTime: "17:30", time: "18:30", venue: "Palazzetto dello Sport", address: "Via dello Sport 3, Roma", notes: "", idReminder: false };
-    s.matches["ex-m3"] = { example: true, opponent: "Team Libeccio", date: iso(-4), home: "home", meetTime: "19:00", time: "20:00", venue: "Palazzetto dello Sport", address: "Via dello Sport 3, Roma", notes: "", idReminder: false };
-    s.trainings["ex-t1"] = { example: true, title: "Ricezione e difesa", date: iso(-1), time: "20:30", notes: "", drills: [dr("Riscaldamento e mobilità", 15, true), rp("Ricezione di battuta", 4, 10, true), dr("Difesa in campo a coppie", 20, true), dr("Partitella 6 contro 6", 25, false)] };
-    s.trainings["ex-t2"] = { example: true, title: "Battuta e attacco", date: iso(1), time: "20:30", notes: "Portare le ginocchiere.", drills: [dr("Riscaldamento", 15), rp("Battuta float", 3, 15), dr("Attacco da posto 4", 25), dr("Defaticamento e stretching", 10)] };
-    s.trainings["ex-t3"] = { example: true, title: "Muro e copertura", date: iso(8), time: "20:30", notes: "", drills: [dr("Riscaldamento", 15), rp("Muro a due", 5, 8), dr("Gioco di squadra", 30)] };
-    ["Giulia", "Marta", "Sara", "Chiara"].forEach(function (n, i) { s.players["ex-p" + (i + 1)] = { example: true, name: n }; });
-    [["Ritardo all'allenamento", 2], ["Ritardo alla partita", 5], ["Carta d'identità dimenticata", 5], ["Assenza senza avviso", 10]].forEach(function (r, i) { s.fineRules["ex-r" + (i + 1)] = { example: true, name: r[0], amount: r[1] }; });
-    s.fines["ex-f1"] = { example: true, player: "Giulia", reason: "Ritardo all'allenamento", amount: 2, date: iso(-1), paid: false };
-    s.fines["ex-f2"] = { example: true, player: "Marta", reason: "Carta d'identità dimenticata", amount: 5, date: iso(-4), paid: false };
-    s.fines["ex-f3"] = { example: true, player: "Giulia", reason: "Ritardo alla partita", amount: 5, date: iso(-4), paid: false };
-    s.fines["ex-f4"] = { example: true, player: "Sara", reason: "Ritardo all'allenamento", amount: 2, date: iso(-8), paid: true };
-    return s;
-  }
 
   /* ---------- esporta e importa i dati ---------- */
   function dataCard() {
     return '<section class="card"><h3 style="font-size:22px">I dati della squadra</h3>' +
-      '<p class="sub" style="margin-top:6px">I dati sono salvati su questo dispositivo. Per passarli alla squadra: esporta il file, mandalo nel gruppo e chi lo riceve lo importa.</p>' +
-      (storageOk ? "" : '<p class="notice" style="margin-top:8px">Questo browser non permette di salvare i dati. Esporta il file prima di chiudere la pagina.</p>') +
-      '<div class="actions"><button class="btn" data-act="export">Esporta dati</button><button class="btn" data-act="import">Importa dati</button></div></section>';
+      '<p class="sub">Le informazioni sono condivise online e si aggiornano automaticamente. Solo Serena può modificarle.</p>' +
+      (state.canWrite ? '<div class="actions"><button class="btn" data-act="export">Scarica backup</button><button class="btn" data-act="import">Importa backup precedente</button></div>' : '') + '</section>';
   }
   function exportData() {
     var blob = new Blob([JSON.stringify({ app: "agenda-volley", version: 1, data: store }, null, 1)], { type: "application/json" });
@@ -701,15 +658,33 @@ nav.tabs a { font-size: clamp(13px, 4vw, 19px); }
     toast("File dei dati pronto.");
   }
   function askImport(d) {
-    openModal("Importare i dati?", '<p>I dati di questo dispositivo (partite, allenamenti, multe e giocatori) verranno sostituiti con quelli del file.</p>', async function () {
-      var n = {}; COLLS.forEach(function (c) { n[c] = d[c] && typeof d[c] === "object" ? d[c] : {}; });
-      store = n; persist(); notifyAll(); toast("Dati importati."); return true;
-    }, "Sostituisci i dati");
+    if (!state.canWrite) return;
+    var valid = d && typeof d === "object" && COLLS.every(function (c) {
+      return d[c] && typeof d[c] === "object" && !Array.isArray(d[c]) && Object.keys(d[c]).every(function (id) {
+        return id && id.indexOf("/") < 0 && d[c][id] && typeof d[c][id] === "object" && !Array.isArray(d[c][id]);
+      });
+    });
+    if (!valid) return toast("Il backup non contiene dati validi.");
+    openModal("Sostituire i dati online?", '<p>Il backup sostituirà partite, allenamenti, multe e giocatori per tutta la squadra. Scarica prima un backup dei dati attuali.</p>', async function () {
+      if (!state.canWrite || !navigator.onLine) { toast("Accedi come Serena e verifica la connessione."); return false; }
+      try {
+        var snapshots = await Promise.all(COLLS.map(function (c) { return db.collection(c).get({ source: "server" }); }));
+        var ops = [];
+        COLLS.forEach(function (c, i) {
+          snapshots[i].docs.forEach(function (doc) { if (!Object.prototype.hasOwnProperty.call(d[c], doc.id)) ops.push(["delete", doc.ref]); });
+          Object.keys(d[c]).forEach(function (id) { ops.push(["set", db.collection(c).doc(id), d[c][id]]); });
+        });
+        if (ops.length > 450) { toast("Backup troppo grande per una sostituzione unica. Contatta chi gestisce il sito."); return false; }
+        var batch = db.batch();
+        ops.forEach(function (op) { if (op[0] === "set") batch.set(op[1], op[2]); else batch.delete(op[1]); });
+        await batch.commit(); toast("Dati online aggiornati."); return true;
+      } catch (e) { fail(e); return false; }
+    }, "Sostituisci i dati online");
   }
   document.addEventListener("click", function (e) {
     var b = e.target.closest("[data-act]"); if (!b) return;
-    if (b.dataset.act === "export") exportData();
-    if (b.dataset.act === "import") $("#importfile").click();
+    if (state.canWrite && b.dataset.act === "export") exportData();
+    if (state.canWrite && b.dataset.act === "import") $("#importfile").click();
   });
   $("#importfile").addEventListener("change", function () {
     var f = this.files[0]; this.value = ""; if (!f) return;
@@ -723,20 +698,57 @@ nav.tabs a { font-size: clamp(13px, 4vw, 19px); }
 
   /* ---------- avvio ---------- */
   var map = { matches: "matches", trainings: "trainings", fineRules: "rules", fines: "fines", players: "players" };
+  function accessCard() {
+    if (!auth) return;
+    $("#access").innerHTML = state.canWrite
+      ? '<p><strong>Accesso Serena</strong> · Modifiche abilitate</p><button class="btn" id="logout">Esci</button>'
+      : '<p>Consultazione pubblica · Solo Serena può modificare</p>' + (auth.currentUser
+        ? '<p>Questo account non è autorizzato.</p><button class="btn" id="logout">Esci</button>'
+        : '<button class="btn" id="login">Accesso Serena</button>');
+    var logout = $("#logout"), login = $("#login");
+    if (logout) logout.onclick = function () { auth.signOut().catch(fail); };
+    if (login) login.onclick = function () {
+      openModal("Accesso Serena", field("Email", "email", input("email", "email", "", 'required autocomplete="username"')) +
+        field("Password", "password", input("password", "password", "", 'required autocomplete="current-password"')), async function (fd) {
+        try { await auth.signInWithEmailAndPassword(String(fd.get("email")).trim(), String(fd.get("password"))); return true; }
+        catch (e) { toast("Accesso non riuscito. Controlla le credenziali e la connessione."); return false; }
+      }, "Accedi");
+    };
+  }
   function start() {
     route();
-    store = loadStore();
-    if (!store) { store = seed(); persist(); }
-    COLLS.forEach(function (c) { store[c] = store[c] || {}; });
-    db = localDb;
-    Object.keys(map).forEach(function (coll) {
-      db.collection(coll).onSnapshot(function (snap) {
-        state[map[coll]] = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
-        state.loaded[coll] = true;
-        if (Object.keys(state.loaded).length === 5) render.slow = true;
-        if (!document.querySelector("#mform")) render();
+    var config = window.AGENDA_FIREBASE;
+    if (!config || !config.firebase || !config.firebase.apiKey || !config.serenaUid) {
+      state.error = "L’archivio condiviso non è ancora configurato. Segui la guida ATTIVAZIONE.md."; render(); return;
+    }
+    try {
+      firebase.initializeApp(config.firebase);
+      db = firebase.firestore(); auth = firebase.auth();
+      auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(fail);
+      auth.onAuthStateChanged(function (user) {
+        state.canWrite = !!user && user.uid === config.serenaUid;
+        closeModal(); accessCard(); render();
       });
-    });
+      accessCard();
+      COLLS.forEach(function (coll) {
+        db.collection(coll).onSnapshot({ includeMetadataChanges: true }, function (snap) {
+          store[coll] = {};
+          state[map[coll]] = snap.docs.map(function (doc) {
+            store[coll][doc.id] = doc.data();
+            return Object.assign({}, doc.data(), { id: doc.id });
+          });
+          state.loaded[coll] = true;
+          state.error = null;
+          if (Object.keys(state.loaded).length === 5) render.slow = true;
+          if (!document.querySelector("#mform")) render();
+          $("#connection").textContent = snap.metadata.fromCache
+            ? "Connessione in corso o assente: le informazioni potrebbero non essere aggiornate."
+            : "Collegato all’archivio online · Aggiornamento automatico";
+        }, function () {
+          state.error = "Impossibile leggere i dati online. Controlla la connessione e la configurazione del database."; render();
+        });
+      });
+    } catch (e) { state.error = "Servizio online non disponibile. Verifica la configurazione e riprova."; render(); }
   }
   start();
 })();
